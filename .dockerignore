@@ -1,0 +1,4 @@
+../urlshortner - Copy/build/
+.gradle/
+.idea/
+*.iml
