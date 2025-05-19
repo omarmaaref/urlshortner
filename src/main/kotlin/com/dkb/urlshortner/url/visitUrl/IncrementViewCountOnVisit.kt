@@ -6,9 +6,9 @@ import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 
 @Service
-class IncrementVueCountVisitHandler(
+class IncrementViewCountOnVisit(
     private var urlRepository: UrlRepository
-): VisitHandler {
+): OnVisit {
 
     // Asynchronously increments the view count and saves it back.
     @Async

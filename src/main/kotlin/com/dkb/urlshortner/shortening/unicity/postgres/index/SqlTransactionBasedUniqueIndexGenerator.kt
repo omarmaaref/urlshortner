@@ -1,8 +1,9 @@
 package com.dkb.urlshortner.shortening.unicity.postgres.index
 
 import com.dkb.urlshortner.shortening.unicity.postgres.index.repository.AutoIncrementedIndexRepository
-import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Isolation
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 open class SqlTransactionBasedUniqueIndexGenerator(
@@ -10,9 +11,9 @@ open class SqlTransactionBasedUniqueIndexGenerator(
 ): UniqueIndexGenerator {
 
     // This transaction should lock the index to avoid race conditions
-    // but the default @Transactional Lock Mode is READ COMMITTED, which isn't enough,
-    // I left it anyway, it will be a nice conversation starter in our interview :D
-    @Transactional
+    // but the default @Transactional Lock Mode is READ COMMITTED, But in our case we need atomicity,
+    // that's what SERIALIZABLE isolation offers, it will be a nice conversation starter in our interview :D
+    @Transactional(isolation=Isolation.SERIALIZABLE)
     override fun nextIndex(): Long {
         // fetch the single row
         var record = autoIncrementedIndexRepository
