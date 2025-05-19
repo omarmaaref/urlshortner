@@ -1,7 +1,6 @@
 **Url Shortener App**
 
-This URL Shortener Service generates compact aliases (“short codes”) for long URLs. Designed as an MVP, 
-it emphasizes simplicity and extensibility so you can "swap in" optimized strategies (like Redis-based counters) without rewriting the core.
+This URL Shortener Service generates compact aliases (“short codes”) for long URLs. Designed as an MVP.
 
 Key goals (MVP):
 
@@ -10,7 +9,25 @@ Key goals (MVP):
 
 ---
 
+*How to shorten the url*
+
+*Idea 1:* hash the url using a hashing algorithm => rejected
+
+*Limitations:* birthday attack ( 2 hash with same value )
+
+*idea 2:* Use a uniquely incremented index and transform it to base62
+*limitations:* Sequential codes may be predictable
+
+*idea 3:* use some kind of encoder like FPE encoder, to avoid reverse engineering the codes
+*limitations:* if secret key is compromised, the entire app will be compromised.
+
+*Current choice:* **Increment → Base62 → FPE**
+
+---
 *Architecture & Design*
+I prepared this component diagram:
+![Diagram](diagram.png)
+[Miro Diagram](https://miro.com/app/board/uXjVIz2BrDc=/?share_link_id=214155488495)
 
 **Index Generation**
 
@@ -20,9 +37,10 @@ Key goals (MVP):
 **Short Code Transformer Pipeline**
 
 1. **Base62 encoder** converts the integer index into a URL-safe string.
-2. **Format-Preserving Encryption (FPE) layer** (optional) to obfuscate sequential patterns.
+2. **Format-Preserving Encryption (FPE) layer** to obfuscate sequential patterns.
 
-You can reorder, add, or remove transformers at runtime via composition.
+And to make adding future Transforms Dynamic and seamless I created a Composite Transformer
+that offers transformer reordering, adding, removal.
 
 **API Endpoints**
 
@@ -45,25 +63,7 @@ by using env-based config, treating backing services as attachable resources, an
 
 **Transactional Integrity & Concurrency**
 
-* Scoped `@Transactional` around `nextIndex()` locks only the counter row, minimizing lock duration under load.
-
----
-
-*Short Code Generation Strategies*
-
-*Idea 1:* hash the url using a hashing algorithm => rejected
-
-*Limitations:* birthday attack
-
-*idea 2:* Use a uniquely incremented index and transform it to base62
-*limitations:* Sequential codes may be predictable
-
-*idea 3:* use some kind of encoder like FPE encoder, to avoid reverse engineering the codes
-*limitations:* if secret key is compromised, the entire app will be compromised.   
-
-*Current choice:* **Increment → Base62 → FPE**
-
----
+* Scoped `@Transactional` with SERIALIZABLE isolation mode around `nextIndex()` to avoid race conditions.
  
 *Docker & Kubernetes*
 
@@ -93,17 +93,17 @@ by using env-based config, treating backing services as attachable resources, an
 
 **CI/CD Pipeline**
 
-* Set up GitHub/GitLab Actions: build, test, security scans → publish Docker images → deploy to Kubernetes (Dev/Prod).
+* Set up GitLab CI/CD: build, test, security scans → publish Docker images → deploy to Kubernetes (Dev/Prod).
 
 **Testing Strategy**
 
-* Add end-to-end tests (Cypress, Playwright, or Testcontainers).
+* Add end-to-end tests (Cypress, Playwright).
 * Expand integration tests for URL persistence, transformer behavior, and redirect logic.
 
+* Use Terraform to provision PostgreSQL, spin up K8s clusters (GKE/EKS), and manage DNS, secrets, and monitoring.
 **Infrastructure & Scalability**
 
 * Keep backend stateless horizontally scale behind a load balancer.
-* Use Terraform to provision PostgreSQL, spin up K8s clusters (GKE/EKS), and manage DNS, secrets, and monitoring.
 
 ---
 
