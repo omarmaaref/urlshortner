@@ -5,7 +5,7 @@ RUN mkdir -p /home/gradle/.gradle && chown -R gradle:gradle /home/gradle/.gradle
 USER gradle
 WORKDIR /home/gradle/project
 
-COPY --chown=gradle:gradle ../urlshortner%20-%20Copy .
+COPY --chown=gradle:gradle . .
 # skip tests with -x test
 RUN ./gradlew clean build --no-daemon -x test --refresh-dependencies \
     && echo "Build succeeded (tests skipped)."
